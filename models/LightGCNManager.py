@@ -4,7 +4,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from dataloader.BPRPairwiseSampler import BPRPairwiseSampler
-from dataloader.LastFMDataset import LastFMDataset, LastFMTrainDataset, LastFMTestDataset
+from dataloader.Dataset import GraphaTrainDataset, GraphaTestDataset
+from dataloader.LastFMDataset import LastFMDataset
+from dataloader.MovieLensDataset import MovieLensDataset
 from utils.loss import l2_reg_loss, bpr_loss
 from utils.metrics import ranking_evaluation
 from models.LightGCN import LightGCN
@@ -14,12 +16,7 @@ class LightGCNManager:
     _MODEL_NAME = "LightGCN"
     _FD_DICT = {
         "LastFM": LastFMDataset,
-    }
-    _TRD_DICT = {
-        "LastFM": LastFMTrainDataset,
-    }
-    _TED_DICT = {
-        "LastFM": LastFMTestDataset,
+        "MovieLens": MovieLensDataset
     }
 
     def __init__(self, args):
@@ -61,12 +58,12 @@ class LightGCNManager:
     def _load_train_dataset(self):
         if self.train_dataset is None:
             self._load_full_dataset()
-            self.train_dataset = self._TRD_DICT[self.args.dataset](self.full_dataset)
+            self.train_dataset = GraphaTrainDataset(self.full_dataset)
 
     def _load_test_dataset(self):
         if self.test_dataset is None:
             self._load_full_dataset()
-            self.test_dataset = self._TED_DICT[self.args.dataset](self.full_dataset)
+            self.test_dataset = GraphaTestDataset(self.full_dataset)
 
     def train(self):
         self._init_model()
