@@ -3,43 +3,59 @@ import torch.nn as nn
 
 
 class LightGCN(nn.Module):
-    def __init__(self, num_users, num_items, embed_dim, n_layers, norm_adj):
+    """
+    LightGCN 模型实现
+
+    该模型是一个轻量级的图卷积推荐模型，仅保留了邻居信息传播部分，去除了非线性激活函数和权重矩阵。
+    """
+    def __init__(self,
+                 num_users: int,
+                 num_items: int,
+                 embed_dim: int,
+                 num_layers: int,
+                 norm_adj: torch.Tensor):
         super(LightGCN, self).__init__()
         self.emb_size = embed_dim
-        self.n_layers = n_layers
+        self.n_layers = num_layers
         self.num_users = num_users
         self.num_items = num_items
 
-        # 用户嵌入矩阵，形状 [num_users, emb_size]
+        # 初始化用户嵌入，形状为 [num_users, embed_dim]
         self.user_emb = nn.Parameter(torch.randn(num_users, embed_dim))
-        # 物品嵌入矩阵，形状 [num_items, emb_size]
+        # 初始化物品嵌入，形状为 [num_items, embed_dim]
         self.item_emb = nn.Parameter(torch.randn(num_items, embed_dim))
-        # 归一化稀疏邻接矩阵，形状 [(num_users + num_items), (num_users + num_items)]
-        self.norm_adj = norm_adj
+
+        nn.init.xavier_uniform_(self.user_emb)
+        nn.init.xavier_uniform_(self.item_emb)
+
+        # 保存归一化后的稀疏邻接矩阵，形状为 [(num_users + num_items), (num_users + num_items)]
+        self.register_buffer('norm_adj', norm_adj)
 
     def forward(self):
-        # 拼接用户和物品嵌入，形状 [num_users + num_items, emb_size]
+        # 拼接用户和物品嵌入，得到 [num_users + num_items, embed_dim]
         all_emb = torch.cat([self.user_emb, self.item_emb], dim=0)
 
-        # embs 列表存放每层的嵌入，初始为第0层（原始嵌入）
-        embs = [all_emb]  # 形状 [[num_users + num_items, emb_size], ]
+        # 用于存储每一层的嵌入，初始为第0层（即原始嵌入）
+        embs = [all_emb]
 
-        for _ in range(self.n_layers):
-            # 图卷积传播，邻接矩阵乘以嵌入
-            # all_emb: [num_users + num_items, emb_size]
-            # norm_adj: sparse [(num_users + num_items), (num_users + num_items)]
+        # 图卷积传播，执行 num_layers 次
+        for layer in range(self.n_layers):
+            # 执行一层图卷积传播
+            # norm_adj 是稀疏邻接矩阵，乘以当前嵌入向量，传播信息
             all_emb = torch.sparse.mm(self.norm_adj, all_emb)
-            # 传播后的all_emb仍然是 [num_users + num_items, emb_size]
+            # 每层传播结果追加到 embs 列表中
             embs.append(all_emb)
 
-        # 堆叠所有层嵌入，形状变成 [num_users + num_items, n_layers + 1, emb_size]
+        # embs 是一个包含 n_layers+1 个元素的列表，每个元素形状为 [num_users + num_items, embed_dim]
+        # 将其堆叠成一个三维张量，形状为 [num_users + num_items, n_layers + 1, embed_dim]
         embs = torch.stack(embs, dim=1)
 
-        # 对所有层的嵌入取平均，形状变成 [num_users + num_items, emb_size]
+        # 对 n_layers+1 个嵌入进行平均，得到最终嵌入
+        # 平均后的形状为 [num_users + num_items, embed_dim]
         embs = torch.mean(embs, dim=1)
 
-        # 分离用户和物品嵌入
-        user_final = embs[:self.num_users]  # [num_users, emb_size]
-        item_final = embs[self.num_users:]  # [num_items, emb_size]
+        # 拆分出最终的用户和物品嵌入
+        user_final = embs[:self.num_users]  # [num_users, embed_dim]
+        item_final = embs[self.num_users:]  # [num_items, embed_dim]
 
         return user_final, item_final

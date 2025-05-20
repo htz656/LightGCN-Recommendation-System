@@ -59,7 +59,7 @@ def ranking_evaluation(origin, res, n_list):
     if len(origin) != len(res):
         raise ValueError('The Lengths of test set and predicted set do not match!')
 
-    measure = []
+    measures = {}
     for n in n_list:
         predicted = {user: res[user][:n] for user in res}
         hits = Metric.hits(origin, predicted)
@@ -67,10 +67,11 @@ def ranking_evaluation(origin, res, n_list):
         precision = Metric.precision(hits, n)
         recall = Metric.recall(hits, origin)
         ndcg = Metric.ndcg(origin, predicted, n)
+        measures[n] = {
+            'Hit Ratio': hr,
+            'Precision': precision,
+            'Recall': recall,
+            'NDCG': ndcg
+        }
+    return measures
 
-        measure.append(f'Top {n}\n')
-        measure.append(f'Hit Ratio: {hr}\n')
-        measure.append(f'Precision: {precision}\n')
-        measure.append(f'Recall: {recall}\n')
-        measure.append(f'NDCG: {ndcg}\n')
-    return measure
