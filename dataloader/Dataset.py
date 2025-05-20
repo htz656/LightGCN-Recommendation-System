@@ -31,7 +31,7 @@ class GraphaDataset(object):
 
     def _load_from(self, loader_class):
         self.loader = loader_class(self.data_dir)
-        self.data = self.loader.load_user_artists()
+        self.data = self.loader.load_user_item_file()
 
         self.user2id = {uid: i for i, uid in enumerate(self.data[self.USERID].unique())}
         self.item2id = {aid: i for i, aid in enumerate(self.data[self.ITEMID].unique())}
@@ -70,15 +70,20 @@ class GraphaDataset(object):
         return self.user2id, self.item2id, self.id2user, self.id2item
 
     def build_interaction_weight_matrix(self, data):
+        user_idx = data['user_idx'].astype(int).values
+        item_idx = data['item_idx'].astype(int).values
+        weights = data[self.WEIGHT].astype(np.float32).values
+
         mat = torch.zeros((self.num_users, self.num_items), dtype=torch.float32)
-        for _, row in data.iterrows():
-            mat[row['user_idx'], row['item_idx']] = row[self.WEIGHT]
+        mat[user_idx, item_idx] = torch.from_numpy(weights)
         return mat
 
     def build_interaction_binary_matrix(self, data):
+        user_idx = data['user_idx'].astype(int).values
+        item_idx = data['item_idx'].astype(int).values
+
         mat = torch.zeros((self.num_users, self.num_items), dtype=torch.float32)
-        for _, row in data.iterrows():
-            mat[row['user_idx'], row['item_idx']] = 1.0
+        mat[user_idx, item_idx] = 1.0
         return mat
 
     def build_normalized_adj_matrix(self, data):
