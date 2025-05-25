@@ -10,6 +10,8 @@ class GraphaDataset(object):
     USERID = None
     ITEMID = None
     WEIGHT = None
+    IID = None
+    INAME = None
 
     def __init__(self, data_dir, test_size=0.2, seed=42):
         self.data_dir = data_dir
@@ -32,17 +34,18 @@ class GraphaDataset(object):
     def _load_from(self, loader_class):
         self.loader = loader_class(self.data_dir)
         self.data = self.loader.load_user_item_file()
+        self.item_iname_df = self.loader.load_iid_iname_file()
+        self.item2iname = dict(zip(self.item_iname_df[self.IID].astype(int), self.item_iname_df[self.INAME]))
 
         self.user2id = {uid: i for i, uid in enumerate(self.data[self.USERID].unique())}
         self.item2id = {aid: i for i, aid in enumerate(self.data[self.ITEMID].unique())}
         self.id2user = {i: uid for uid, i in self.user2id.items()}
         self.id2item = {i: aid for aid, i in self.item2id.items()}
+        self.num_users = len(self.user2id)
+        self.num_items = len(self.item2id)
 
         self.data['user_idx'] = self.data[self.USERID].map(self.user2id)
         self.data['item_idx'] = self.data[self.ITEMID].map(self.item2id)
-
-        self.num_users = len(self.user2id)
-        self.num_items = len(self.item2id)
 
         train_list, test_list = [], []
         for user in self.data['user_idx'].unique():
@@ -67,7 +70,7 @@ class GraphaDataset(object):
         return self.test_data
 
     def get_user_item_mappings(self):
-        return self.user2id, self.item2id, self.id2user, self.id2item
+        return self.user2id, self.item2id, self.id2user, self.id2item, self.item2iname
 
     def build_interaction_weight_matrix(self, data):
         user_idx = data['user_idx'].astype(int).values

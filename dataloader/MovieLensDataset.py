@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from dataloader.Dataset import GraphaDataset
+from dataloader.GraphaDataset import GraphaDataset
 
 
 class MovieLensLoader:
@@ -13,12 +13,17 @@ class MovieLensLoader:
         path = os.path.join(self.data_dir, 'user_ratedmovies-timestamps.dat')
         return pd.read_csv(path, sep='\t', engine='python')  # ['userID', 'movieID', 'rating', 'timestamp']
 
+    def load_iid_iname_file(self):
+        pass
+
 
 class MovieLensDataset(GraphaDataset):
     USERID = 'userID'
     ITEMID = 'movieID'
     WEIGHT = 'rating'
     LOADER = MovieLensLoader
+    IID = 'id'
+    INAME = 'name'
 
     def __init__(self, *kargs, **kwargs):
         super(MovieLensDataset, self).__init__(*kargs, **kwargs)

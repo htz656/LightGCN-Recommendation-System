@@ -1,13 +1,8 @@
 import os
 
-import numpy as np
 import pandas as pd
-import scipy as sp
-import torch
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset
 
-from dataloader.Dataset import GraphaDataset
+from dataloader.GraphaDataset import GraphaDataset
 
 
 class LastFMLoader:
@@ -18,12 +13,18 @@ class LastFMLoader:
         path = os.path.join(self.data_dir, 'user_artists.dat')
         return pd.read_csv(path, sep='\t', engine='python') # ['userID', 'artistID', 'weight']
 
+    def load_iid_iname_file(self):
+        path = os.path.join(self.data_dir, 'artists.dat')   # ['id', 'name', 'url', pictureURL]
+        return pd.read_csv(path, sep='\t', engine='python', usecols = [0, 1], on_bad_lines = 'skip')
+
 
 class LastFMDataset(GraphaDataset):
     USERID = 'userID'
     ITEMID = 'artistID'
     WEIGHT = 'weight'
     LOADER = LastFMLoader
+    IID = 'id'
+    INAME = 'name'
 
     def __init__(self, *kargs, **kwargs):
         super(LastFMDataset, self).__init__(*kargs, **kwargs)
