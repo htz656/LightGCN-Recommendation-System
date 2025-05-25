@@ -1,7 +1,7 @@
-# 基于 LightGCN 的图神经推荐系统
+# 基于图卷积神经的推荐系统
 
-本项目实现了一个基于图神经网络的轻量级协同过滤推荐系统 —— 
-[LightGCN](https://arxiv.org/abs/2002.02126)
+本项目实现了一个基于图神经网络的轻量级协同过滤推荐系统，可以使用LightGCN及NGCF实现离线训练以及推荐。
+
 
 ---
 ## 数据集
@@ -14,16 +14,22 @@
 LightGCN-Recommender/
 │
 ├── models/
-│ ├── LightGCN.py           # 模型结构定义
-│ └── LightGCNManager.py    # 训练、评估与模型管理器
+│ ├── NGCF.py               # NGCF模型结构定义
+│ ├── LightGCN.py           # LightGCN模型结构定义
+├── managers/
+│ ├── Manager.py            # 定义基本管理类及方法，定义管理类参数
+│ ├── NGCFManager.py        # NGCF训练、评估与模型管理器
+│ └── LightGCNManager.py    # LightGCN训练、评估与模型管理器
 ├── datasetloader/
-│ ├── Dataset.py            # 通用图数据集接口
+│ ├── GraphaDataset.py      # 通用图数据集接口
 │ ├── BPRPairwiseSampler.py # BPR 负采样器
 │ ├── LastFMDataset.py      # LastFM 数据集
 │ └── MovieLensDataset.py   # MovieLens 数据集
 ├── utils/
 │ ├── loss.py
+│ ├── matrix.py
 │ └── metrics.py
+├── gui.py
 ├── main.py
 ├── requirements.txt 
 ├── .gitignore
@@ -35,32 +41,12 @@ LightGCN-Recommender/
 ## 快速开始
 
 ```bash
-python train.py \
-    --model_name LightGCN \
-    --dataset LastFM \
-    --data_dir ./datasets/hetrec2011-lastfm-2k \
-    --device cuda:0 \
-    --epochs 500 \
-    --batch_size 2048
+python main.py
 ```
-| 参数名               | 默认值                               | 说明                        |
-|-------------------|-----------------------------------|---------------------------|
-| `--model_name`    | LightGCN                          | 模型名称                      |
-| `--embed_dim`     | 32                                | 嵌入向量维度                    |
-| `--num_layers`    | 3                                 | GCN 层数                    |
-| `--dataset`       | LastFM                            | 使用的数据集：LastFM 或 MovieLens |
-| `--data_dir`      | `./datasets/hetrec2011-lastfm-2k` | 数据路径                      |
-| `--num_negatives` | 1                                 | 每个正样本的负样本数                |
-| `--batch_size`    | 2048                              | 批量大小                      |
-| `--lr`            | 1e-3                              | 学习率                       |
-| `--reg`           | 1e-5                              | L2 正则化                    |
-| `--eval_freq`     | 10                                | 每 N 个 epoch 评估一次          |
-| `--topN`          | 5 10 20                           | Top-N 推荐结果评估              |
-| `--save_path`     | ./ckpts                           | 模型保存路径                    |
-
+去除了命令行启动，改为图像界面启动
 
 ---
 ## TODO
-- 增加可视化模块（如 embedding 可视化）
-- 支持多种 GNN 变种（如 NGCF、GraphSAGE）
-- 引入 TensorBoard 训练监控
+- 支持更多 GNN 变种
+- 支持在线训练和推荐
+
